@@ -37,7 +37,7 @@ func getLastTimestamp(path string) int {
 	return id
 }
 
-func appendCommand(fp string, command string, frames int) {
+func appendCommand(fp string, user string, command string, frames int) {
 	// Cap the number of frames to append
 	// at 60.
 	if frames > 60 {
@@ -49,7 +49,7 @@ func appendCommand(fp string, command string, frames int) {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	if _, err := fmt.Fprintf(f, "%s %d\n", command, frames); err != nil {
+	if _, err := fmt.Fprintf(f, "%s %s %d\n", user, command, frames); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -68,13 +68,14 @@ func main() {
 		// advance with those buttons held
 		m := message.Message
 		words := strings.Split(m, " ")
+		user := message.User.DisplayName
 		if len(words) == 1 {
 			if words[0] == "rewind" {
-				appendCommand(fp, "rewind", 0)
+				appendCommand(fp, user, "rewind", 0)
 			} else if frames, err := strconv.Atoi(words[0]); err == nil {
 				// If we had just 1 command and it was a number, interpret it as just wait n frames.
 
-				appendCommand(fp, " ", frames)
+				appendCommand(fp, user, " ", frames)
 			}
 		}
 		if len(words) != 2 {
@@ -84,7 +85,7 @@ func main() {
 		if cmd == "save" || cmd == "load" {
 			savename := words[1]
 			if allLettersRe.MatchString(savename) {
-				appendCommand(fp, fmt.Sprintf("%s %s", cmd, savename), 0)
+				appendCommand(fp, user, fmt.Sprintf("%s %s", cmd, savename), 0)
 			}
 
 			return
@@ -100,7 +101,7 @@ func main() {
 				return
 			}
 		}
-		appendCommand(fp, cmd, frames)
+		appendCommand(fp, user, cmd, frames)
 	}
 	client.OnPrivateMessage(processMessage)
 	if err := client.Connect(); err != nil {

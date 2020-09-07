@@ -40,25 +40,26 @@ function on_idle()
             ntokens = ntokens + 1
             table.insert(t, token)
         end
-        if ntokens == 1 then
+        username = t[1]
+        if ntokens == 2 then
             cmd = ""
-            frames = tonumber(t[1])-1
+            frames = tonumber(t[2])-1
         else
             cmd = ""
-            if t[1] == "save" then
-                if t[2] ~= "begin-level" then
-                    exec("save-state " .. t[2])
+            if t[2] == "save" then
+                if t[3] ~= "begin-level" then
+                    exec("save-state " .. t[3])
                     unpause = false
                 end
-            elseif t[1] == "load" then
-                if t[2] ~= "begin-level" then
-                    exec("load-state " .. t[2])
+            elseif t[2] == "load" then
+                if t[3] ~= "begin-level" then
+                    exec("load-state " .. t[3])
                     just_loaded = true
                     unpause = false
                     end
             else
-                cmd = t[1]:lower()
-                frames = tonumber(t[2])-1
+                cmd = t[2]:lower()
+                frames = tonumber(t[3])-1
             end
         end
         input.reset()
@@ -205,33 +206,33 @@ end
 white = gui.color(255, 255, 255)
 transparent = gui.color(255, 255, 255, 0)
 
-function draw_circle(x, y, r, color, button)
+function draw_circle(x, y, color, button)
     if buttons[inputmap[button]] then
-        gui.circle(x, y, r, 1, color, color)
+        gui.circle(x, y, 5, 1, color, color)
     else
-        gui.circle(x, y, r, 1, color)
+        gui.circle(x, y, 5, 1, color)
     end
 end
 
 function on_paint()
     raw_input = input.raw()
     -- left
-    draw_circle(5, 10, 4, white, "l")
+    draw_circle(5, 14, white, "l")
     -- up
-    draw_circle(10, 4, 4, white, "u")
+    draw_circle(14, 5, white, "u")
     -- right
-    draw_circle(15, 10, 4, white, "r")
+    draw_circle(23, 14, white, "r")
     -- down
-    draw_circle(10, 16, 4, white, "d")
+    draw_circle(14, 23, white, "d")
 
     -- y
-    draw_circle(25, 10, 4, gui.color(0, 255, 0), "y")
+    draw_circle(35, 14, gui.color(0, 255, 0), "y")
     -- x
-    draw_circle(30, 4, 4,  gui.color(0, 0, 255), "x")
+    draw_circle(44, 5,  gui.color(0, 0, 255), "x")
     -- b
-    draw_circle(30, 16, 4, gui.color(255, 255, 0), "b")
+    draw_circle(44, 23, gui.color(255, 255, 0), "b")
     -- a
-    draw_circle(35, 10, 4, gui.color(255, 0, 0), "a")
+    draw_circle(53, 14, gui.color(255, 0, 0), "a")
 
     if replaying_movie then
         gui.text(50, 70, "INSTANT REPLAY", gui.color(255, 0, 0))
