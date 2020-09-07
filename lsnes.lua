@@ -22,6 +22,7 @@ buttons = {}
 
 is_paused = false
 just_loaded = false
+frames = 0
 
 function on_idle()
     newPos = file:seek("end")
@@ -45,12 +46,16 @@ function on_idle()
         else
             cmd = ""
             if t[1] == "save" then
-                exec("save-state " .. t[2])
-                unpause = false
+                if t[2] ~= "begin-level" then
+                    exec("save-state " .. t[2])
+                    unpause = false
+                end
             elseif t[1] == "load" then
-                exec("load-state " .. t[2])
-                just_loaded = true
-                unpause = false
+                if t[2] ~= "begin-level" then
+                    exec("load-state " .. t[2])
+                    just_loaded = true
+                    unpause = false
+                    end
             else
                 cmd = t[1]:lower()
                 frames = tonumber(t[2])-1
@@ -66,6 +71,7 @@ function on_idle()
         end
         stop_at = movie.currentframe() + frames
         if unpause then
+            print("unpausing emulator due to command")
             is_paused = false
             exec("pause-emulator")
         end
@@ -100,16 +106,71 @@ skippablegamestates = {
     -- prepare level
     [0x12] = true,
     -- level fade in
-    [0x13] = true }
+    [0x13] = true,
+}
 
 
 last_snapshot = 0
+skipped = false
+endoflevel = false
+replaying_movie = false
+frame_count_at_replay = 0
 function on_frame()
-    --curframe = movie.currentframe()
-    --if curframe > last_snapshot + 60 then
-    --    last_snapshot = curframe
-    --    -- exec("save-state foo")
-    --end
+    -- If we're in read only mode and playing back, we
+    -- need to make sure to unpause the emulator and put
+    -- it back into read-write mode if we're out of frames
+    -- to play back.
+    if endoflevel and frame_count_at_replay == movie.currentframe()+1 then
+        print("end of playback: resetting to r/w mode")
+        exec("set-rwmode")
+        return
+    end
+
+    -- Check for level end.
+    endbyte = memory.readbyte(0x7E1493)
+    endkeybyte = memory.readbyte(0x7E1434)
+    endswitchbyte = memory.readbyte(0x7E191E)
+
+    for i, byte in ipairs({endbyte, endkeybyte, endswitchbyte}) do
+        if byte ~= 0 then
+            if not endoflevel then
+                print("end of level detected")
+                endoflevel = true
+            end
+            return
+        end
+    end
+    if endoflevel then
+        print("finished end of level sequence")
+        print(replaying_movie)
+        endoflevel = false
+        if replaying_movie then
+            print("Finished replaying movie")
+            -- We just finished replaying our movie
+            -- so turn off read only mode and
+            -- return control to the user.
+            exec("set-rwmode")
+            replaying_movie = false
+        else
+            -- We just finished playing through the
+            -- end of level animation, so rewind to our
+            -- start of level savepoint and replay the
+            -- movie.
+            print("Starting movie replay at frame ".. movie.currentframe())
+            replaying_movie = true
+            frame_count_at_replay = movie.currentframe()
+            exec("set-romode")
+            exec("load-preserve begin-level")
+            print("Loaded begin-level")
+            return
+        end
+    end
+
+
+    -- midpointbyte = memory.readbyte(0x7E13CE)
+
+
+    
     -- Player animation status = 9 means
     -- we're dead, so wait until that's over.
     if memory.readbyte(0x7E0071) == 9 then
@@ -117,9 +178,19 @@ function on_frame()
     end
     gamestate = memory.readbyte(0x7E0100)
     if skippablegamestates[gamestate] ~= nil then
+        skipped = true
         return
     end
+    -- Level start
+    if gamestate == 0x14 and skipped then
+        -- We just started a level, so make
+        -- a save state to play back later.
+        print("Saved state at begin level")
+        exec("save-state begin-level")
+    end
+    skipped = false
     if stop_at ~= nil and stop_at <= movie.currentframe() then
+        print("pausing emulator due to end of frame limit")
         exec("pause-emulator")
         is_paused = true
         stop_at = nil
@@ -128,6 +199,7 @@ function on_frame()
         is_paused = true
         just_loaded = false
         stop_at = nil
+        print("pausing emulator due to just loaded")
         exec("pause-emulator")
     end
 end
