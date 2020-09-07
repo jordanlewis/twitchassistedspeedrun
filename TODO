@@ -1,0 +1,22 @@
+- load/save stuff gated by channel points?
+- number of frames per input dependent on
+  number of people typing at once
+- writing down inputs on screen so you can see
+  whether your inputs are doing anything or not
+
+- Playback mode?
+  - once we make it to the end of a level, instead of
+    just returning to the overworld we should replay
+    all of the collected inputs before returning control
+    to twitch.
+  - would also be cool to upload the finished input
+    script somewhere and post the link so people can
+    mess with it.
+  - or use twitch api to auto clip the winning run
+
+- Prevent people from loading savestates that are too
+  far in the past because of trolls
+- Potentially rate limit people loading save states?
+
+- fix bug where commands don't work right after you load
+  a savestate
