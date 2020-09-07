@@ -169,8 +169,6 @@ function on_frame()
 
     -- midpointbyte = memory.readbyte(0x7E13CE)
 
-
-    
     -- Player animation status = 9 means
     -- we're dead, so wait until that's over.
     if memory.readbyte(0x7E0071) == 9 then
@@ -234,4 +232,8 @@ function on_paint()
     draw_circle(30, 16, 4, gui.color(255, 255, 0), "b")
     -- a
     draw_circle(35, 10, 4, gui.color(255, 0, 0), "a")
+
+    if replaying_movie then
+        gui.text(50, 70, "INSTANT REPLAY", gui.color(255, 0, 0))
+    end
 end
